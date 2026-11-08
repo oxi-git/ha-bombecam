@@ -1,0 +1,41 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Connect to BombeCam",
+        "description": "Enter the address of the BombeCam gateway (for example http://192.168.1.12:8654) and an API token minted on the BombeCam computer.",
+        "data": {
+          "url": "Address",
+          "token": "API token"
+        }
+      },
+      "reauth_confirm": {
+        "title": "BombeCam token rejected",
+        "description": "The gateway at {url} rejected the stored token. Paste a new one.",
+        "data": {
+          "token": "API token"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "The gateway rejected this token.",
+      "cannot_connect": "Cannot reach the gateway at that address.",
+      "unknown": "Unexpected error; see the Home Assistant log."
+    },
+    "abort": {
+      "already_configured": "This gateway is already configured.",
+      "reauth_entry_missing": "The config entry no longer exists."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "BombeCam options",
+        "data": {
+          "scan_interval": "Polling interval",
+          "ptz_duration": "PTZ pulse length"
+        }
+      }
+    }
+  }
+}
