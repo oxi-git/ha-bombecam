@@ -7,7 +7,7 @@ ENV PIP_DISABLE_PIP_VERSION_CHECK=1 \
 # lru-dict (pulled in by pytest-homeassistant-custom-component) ships no wheel
 # for CPython 3.13, so it needs a C compiler.
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends gcc \
+    && apt-get install -y --no-install-recommends build-essential \
     && rm -rf /var/lib/apt/lists/*
 
 RUN pip install --no-cache-dir pytest-homeassistant-custom-component
