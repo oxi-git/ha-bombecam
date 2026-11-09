@@ -69,6 +69,24 @@ async def test_user_flow_reports_unreachable_host(hass, mock_client):
     assert result["errors"] == {"base": "cannot_connect"}
 
 
+async def test_user_flow_strips_bearer_prefix(hass, mock_client):
+    """A pasted 'Bearer ' prefix and surrounding spaces are removed."""
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN, context={"source": config_entries.SOURCE_USER}
+    )
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        {CONF_URL: " 192.168.1.12:8654 ", CONF_TOKEN: " Bearer test-token "},
+    )
+    await hass.async_block_till_done()
+
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    assert result["data"] == {
+        CONF_URL: NORMALIZED_URL,
+        CONF_TOKEN: "test-token",
+    }
+
+
 async def test_user_flow_aborts_for_configured_host(hass, mock_client, entry_factory):
     """The same normalized address cannot be added twice."""
     entry_factory()

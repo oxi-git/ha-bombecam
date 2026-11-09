@@ -57,7 +57,9 @@ curl -u admin:YOUR_PASSWORD -X POST http://192.168.1.12:8654/api/v1/operator/tok
 ```
 
 Copy the token from the response into the integration form. The token is stored
-in the Home Assistant config entry and sent as a Bearer token on every request.
+in the Home Assistant config entry and sent as a Bearer token on every request;
+paste it as returned (`bc_tok_...`). A pasted `Bearer ` prefix and surrounding
+spaces are removed automatically.
 
 If the gateway later rejects the token, Home Assistant starts a re-auth flow and
 asks for a new one; the address is kept.

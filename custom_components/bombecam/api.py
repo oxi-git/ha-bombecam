@@ -34,6 +34,14 @@ def normalize_url(value: str) -> str:
     return url
 
 
+def normalize_token(value: str) -> str:
+    """Return the bare API token, dropping spaces and an accidental Bearer prefix."""
+    token = value.strip()
+    if token.lower().startswith("bearer "):
+        token = token[7:].strip()
+    return token
+
+
 @dataclass(slots=True)
 class GatewayInfo:
     """Addresses the gateway reports for its own streams."""
@@ -88,7 +96,7 @@ class BombeCamClient:
     ) -> None:
         self._session = session
         self.base_url = normalize_url(base_url)
-        self._token = token
+        self._token = normalize_token(token)
         self._timeout = ClientTimeout(total=timeout)
 
     @property

@@ -30,6 +30,7 @@ from .api import (
     BombeCamClient,
     BombeCamConnectionError,
     BombeCamError,
+    normalize_token,
 )
 from .const import (
     CONF_PTZ_DURATION,
@@ -74,9 +75,8 @@ class BombeCamConfigFlow(ConfigFlow, domain=DOMAIN):
         """Handle the first step."""
         errors: dict[str, str] = {}
         if user_input is not None:
-            client, error = await self._async_validate(
-                user_input[CONF_URL], user_input[CONF_TOKEN]
-            )
+            token = normalize_token(user_input[CONF_TOKEN])
+            client, error = await self._async_validate(user_input[CONF_URL], token)
             if client is not None:
                 await self.async_set_unique_id(client.base_url)
                 self._abort_if_unique_id_configured()
@@ -84,7 +84,7 @@ class BombeCamConfigFlow(ConfigFlow, domain=DOMAIN):
                     title=_title(client.base_url),
                     data={
                         CONF_URL: client.base_url,
-                        CONF_TOKEN: user_input[CONF_TOKEN],
+                        CONF_TOKEN: token,
                     },
                 )
             if error is not None:
@@ -121,13 +121,12 @@ class BombeCamConfigFlow(ConfigFlow, domain=DOMAIN):
             return self.async_abort(reason="reauth_entry_missing")
 
         if user_input is not None:
-            client, error = await self._async_validate(
-                entry.data[CONF_URL], user_input[CONF_TOKEN]
-            )
+            token = normalize_token(user_input[CONF_TOKEN])
+            client, error = await self._async_validate(entry.data[CONF_URL], token)
             if client is not None:
                 return self.async_update_reload_and_abort(
                     entry,
-                    data={**entry.data, CONF_TOKEN: user_input[CONF_TOKEN]},
+                    data={**entry.data, CONF_TOKEN: token},
                 )
             if error is not None:
                 errors["base"] = error
