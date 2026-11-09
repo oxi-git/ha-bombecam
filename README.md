@@ -19,8 +19,24 @@ The API contract this integration implements is documented in
 
 ## Installation
 
-The repository must be public: HACS downloads custom repositories over the
-public GitHub API.
+The repository must be public. On Home Assistant 2026.11 and newer, install it
+from the built-in **Marketplace**; on older versions use HACS.
+
+### Marketplace (Home Assistant 2026.11+)
+
+1. Open **Settings > Marketplace**.
+2. In the upper-right corner, select **Add from link**.
+3. Enter `https://github.com/oxi-git/ha-bombecam` and select **Add**. If the
+   type is not detected, choose **Integration** and add it again.
+4. Open the repository page and select **Install**.
+5. Restart Home Assistant if the dialog asks for it, then go to
+   **Settings > Devices & services > Add integration > BombeCam**.
+
+Adding a custom repository needs a GitHub connection: the Marketplace asks for
+it and uses GitHub's device sign-in, which does not expose your password to
+Home Assistant.
+
+### HACS (Home Assistant 2026.10 and older)
 
 1. In HACS, open **Integrations**, then the three-dot menu, then
    **Custom repositories**.
