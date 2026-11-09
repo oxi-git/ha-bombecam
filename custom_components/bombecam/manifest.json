@@ -3,6 +3,7 @@
   "name": "BombeCam",
   "codeowners": ["@oxi-git"],
   "config_flow": true,
+  "dependencies": ["stream"],
   "documentation": "https://github.com/oxi-git/ha-bombecam",
   "integration_type": "hub",
   "iot_class": "local_polling",

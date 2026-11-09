@@ -9,6 +9,7 @@ from homeassistant.components.switch import SwitchEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import HomeAssistantError
+from homeassistant.helpers.entity import EntityDescription
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .api import BombeCamError
@@ -43,15 +44,12 @@ def _as_bool(value: Any) -> bool | None:
     return None
 
 
-@dataclass(frozen=True, slots=True)
-class BombeCamSwitchDescription:
+@dataclass(frozen=True, kw_only=True)
+class BombeCamSwitchDescription(EntityDescription):
     """One switch exposed for a camera."""
 
-    key: str
-    name: str
     attribute: str
     action: str
-    icon: str
 
 
 SWITCHES: tuple[BombeCamSwitchDescription, ...] = (

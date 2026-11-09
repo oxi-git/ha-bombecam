@@ -3,12 +3,14 @@
 from __future__ import annotations
 
 from collections.abc import Iterator
+from contextlib import ExitStack
 from unittest.mock import AsyncMock, patch
 
 import pytest
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.bombecam.api import (
+    BombeCamClient,
     CameraInfo,
     GatewayData,
     GatewayInfo,
@@ -57,14 +59,18 @@ def mock_client(gateway_data: GatewayData) -> Iterator[dict[str, AsyncMock]]:
     The mocks are class attributes, so they receive the arguments exactly as
     the integration passes them (no bound ``self``).
     """
-    with patch.multiple(
-        "custom_components.bombecam.api.BombeCamClient",
-        async_validate=AsyncMock(return_value=gateway_data),
-        async_get_gateway=AsyncMock(return_value=gateway_data),
-        async_get_shadow=AsyncMock(return_value={}),
-        async_ptz=AsyncMock(return_value={}),
-        async_control=AsyncMock(return_value={}),
-    ) as mocks:
+    mocks = {
+        "async_validate": AsyncMock(return_value=gateway_data),
+        "async_get_gateway": AsyncMock(return_value=gateway_data),
+        "async_get_shadow": AsyncMock(return_value={}),
+        "async_ptz": AsyncMock(return_value={}),
+        "async_control": AsyncMock(return_value={}),
+    }
+    with ExitStack() as stack:
+        for name, mock in mocks.items():
+            stack.enter_context(
+                patch.object(BombeCamClient, name, mock)
+            )
         yield mocks
 
 

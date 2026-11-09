@@ -5,11 +5,22 @@ ENV PIP_DISABLE_PIP_VERSION_CHECK=1 \
     PYTHONUNBUFFERED=1
 
 # lru-dict (pulled in by pytest-homeassistant-custom-component) ships no wheel
-# for CPython 3.13, so it needs a C compiler.
+# for CPython 3.13, so it needs a C toolchain and the libc headers.
 RUN apt-get update \
     && apt-get install -y --no-install-recommends build-essential \
     && rm -rf /var/lib/apt/lists/*
 
 RUN pip install --no-cache-dir pytest-homeassistant-custom-component
+
+# Home Assistant's camera component imports turbojpeg while loading the
+# platform, so the module (and its shared library) must be present even though
+# this integration does not use it directly.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends libturbojpeg0 \
+    && rm -rf /var/lib/apt/lists/* \
+    && pip install --no-cache-dir PyTurboJPEG
+
+# The integration depends on the stream component, whose only requirement is av.
+RUN pip install --no-cache-dir av
 
 WORKDIR /app
