@@ -3,7 +3,7 @@
     "step": {
       "user": {
         "title": "Connetti BombeCam",
-        "description": "Inserisci l'indirizzo del gateway BombeCam (per esempio http://192.168.1.12:8654) e un token API creato sul computer BombeCam.",
+        "description": "Inserisci l'indirizzo del gateway BombeCam (per esempio http://192.0.2.10:8654) e un token API creato sul computer BombeCam.",
         "data": {
           "url": "Indirizzo",
           "token": "Token API"

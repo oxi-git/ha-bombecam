@@ -19,9 +19,9 @@ from custom_components.bombecam.const import CONF_TOKEN, CONF_URL, DOMAIN
 
 pytest_plugins = "pytest_homeassistant_custom_component"
 
-BASE_URL = "http://192.168.1.12:8654"
+BASE_URL = "http://192.0.2.10:8654"
 TOKEN = "test-token"
-RTSP_URL = "rtsp://192.168.1.12:8554/ingresso"
+RTSP_URL = "rtsp://192.0.2.10:8554/ingresso"
 STILL_IMAGE_URL = f"{BASE_URL}/api/v1/cameras/cam1/snapshot.jpg"
 
 
@@ -81,7 +81,7 @@ def entry_factory(hass):
     def _create(**kwargs) -> MockConfigEntry:
         entry = MockConfigEntry(
             domain=DOMAIN,
-            title="BombeCam (192.168.1.12:8654)",
+            title="BombeCam (192.0.2.10:8654)",
             data={CONF_URL: BASE_URL, CONF_TOKEN: TOKEN},
             unique_id=BASE_URL,
             **kwargs,

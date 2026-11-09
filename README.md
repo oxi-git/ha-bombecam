@@ -53,7 +53,7 @@ used as the config entry unique ID, so the same gateway cannot be added twice.
 Generate a token on the machine running BombeCam:
 
 ```sh
-curl -u admin:YOUR_PASSWORD -X POST http://192.168.1.12:8654/api/v1/operator/token
+curl -u admin:YOUR_PASSWORD -X POST http://192.0.2.10:8654/api/v1/operator/token
 ```
 
 Copy the token from the response into the integration form. The token is stored

@@ -3,7 +3,7 @@
     "step": {
       "user": {
         "title": "Connect to BombeCam",
-        "description": "Enter the address of the BombeCam gateway (for example http://192.168.1.12:8654) and an API token minted on the BombeCam computer.",
+        "description": "Enter the address of the BombeCam gateway (for example http://192.0.2.10:8654) and an API token minted on the BombeCam computer.",
         "data": {
           "url": "Address",
           "token": "API token"

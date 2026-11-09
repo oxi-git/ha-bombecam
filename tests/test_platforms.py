@@ -5,7 +5,7 @@ from __future__ import annotations
 from custom_components.bombecam.const import CONF_PTZ_DURATION
 
 CAMERA_ENTITY = "camera.ingresso"
-RTSP_URL = "rtsp://192.168.1.12:8554/ingresso"
+RTSP_URL = "rtsp://192.0.2.10:8554/ingresso"
 
 
 async def _setup(hass, entry) -> None:

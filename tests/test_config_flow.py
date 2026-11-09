@@ -11,8 +11,8 @@ from custom_components.bombecam.api import (
 )
 from custom_components.bombecam.const import CONF_TOKEN, CONF_URL, DOMAIN
 
-USER_INPUT = {CONF_URL: "192.168.1.12:8654", CONF_TOKEN: "test-token"}
-NORMALIZED_URL = "http://192.168.1.12:8654"
+USER_INPUT = {CONF_URL: "192.0.2.10:8654", CONF_TOKEN: "test-token"}
+NORMALIZED_URL = "http://192.0.2.10:8654"
 
 
 async def test_user_flow_creates_entry(hass, mock_client):
@@ -29,7 +29,7 @@ async def test_user_flow_creates_entry(hass, mock_client):
     await hass.async_block_till_done()
 
     assert result["type"] is FlowResultType.CREATE_ENTRY
-    assert result["title"] == "BombeCam (192.168.1.12:8654)"
+    assert result["title"] == "BombeCam (192.0.2.10:8654)"
     assert result["data"] == {
         CONF_URL: NORMALIZED_URL,
         CONF_TOKEN: "test-token",
@@ -76,7 +76,7 @@ async def test_user_flow_strips_bearer_prefix(hass, mock_client):
     )
     result = await hass.config_entries.flow.async_configure(
         result["flow_id"],
-        {CONF_URL: " 192.168.1.12:8654 ", CONF_TOKEN: " Bearer test-token "},
+        {CONF_URL: " 192.0.2.10:8654 ", CONF_TOKEN: " Bearer test-token "},
     )
     await hass.async_block_till_done()
 
