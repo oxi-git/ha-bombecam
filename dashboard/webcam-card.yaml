@@ -1,0 +1,102 @@
+# BombeCam camera widget for a Home Assistant dashboard.
+#
+# One card with the live stream, the PTZ D-pad and the camera controls.
+# Add it with Dashboard -> Edit -> Add card -> Manual (YAML).
+#
+# Entity IDs follow the device name: the examples below assume a device named
+# "Ingresso", which gives camera.ingresso, button.ingresso_pan_left, and so on.
+# If your device has another name, replace "ingresso" with its slug. The device
+# page under Settings > Devices & services > BombeCam lists every entity ID.
+#
+# Notes:
+# - camera_view: live starts the camera stream as soon as the card is visible
+#   and Home Assistant closes it again when the view is left. A dashboard card
+#   cannot stream while the dashboard is closed.
+# - The PTZ buttons send one pulse of the configured length (Options -> PTZ
+#   pulse length, 400 ms by default). They do not keep moving while held.
+
+type: vertical-stack
+cards:
+  - type: picture-entity
+    entity: camera.ingresso
+    camera_view: live
+    fit_mode: contain
+    show_name: false
+    show_state: false
+    tap_action:
+      action: more-info
+
+  - type: horizontal-stack
+    cards:
+      - type: button
+        entity: button.ingresso_pan_left
+        name: Pan left
+        icon: mdi:arrow-left-bold
+        show_state: false
+        tap_action:
+          action: perform-action
+          perform_action: button.press
+          target:
+            entity_id: button.ingresso_pan_left
+
+      - type: vertical-stack
+        cards:
+          - type: button
+            entity: button.ingresso_tilt_up
+            name: Tilt up
+            icon: mdi:arrow-up-bold
+            show_state: false
+            tap_action:
+              action: perform-action
+              perform_action: button.press
+              target:
+                entity_id: button.ingresso_tilt_up
+
+          - type: button
+            entity: button.ingresso_tilt_down
+            name: Tilt down
+            icon: mdi:arrow-down-bold
+            show_state: false
+            tap_action:
+              action: perform-action
+              perform_action: button.press
+              target:
+                entity_id: button.ingresso_tilt_down
+
+      - type: button
+        entity: button.ingresso_pan_right
+        name: Pan right
+        icon: mdi:arrow-right-bold
+        show_state: false
+        tap_action:
+          action: perform-action
+          perform_action: button.press
+          target:
+            entity_id: button.ingresso_pan_right
+
+  - type: button
+    entity: button.ingresso_stop
+    name: Stop
+    icon: mdi:stop
+    show_state: false
+    tap_action:
+      action: perform-action
+      perform_action: button.press
+      target:
+        entity_id: button.ingresso_stop
+
+  - type: entities
+    title: Camera
+    entities:
+      - entity: switch.ingresso_status_light
+        name: Status light
+      - entity: switch.ingresso_spotlight
+        name: Spotlight
+      - entity: switch.ingresso_motion_detection
+        name: Motion detection
+      - entity: switch.ingresso_sound_detection
+        name: Sound detection
+      - entity: select.ingresso_night_vision
+        name: Night vision
+      - entity: binary_sensor.ingresso_stream_online
+        name: Stream online

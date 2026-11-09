@@ -91,6 +91,18 @@ rather than guessed.
 The camera entity exposes the gateway's RTSP URL as its stream source. Still
 images are fetched from the gateway's `still_image_url`.
 
+## Dashboard widget
+
+[`dashboard/webcam-card.yaml`](dashboard/webcam-card.yaml) is a ready-to-use
+card with the live stream, the PTZ D-pad (left, right, up, down, stop) and the
+camera controls in one card. Add it with **Dashboard > Edit > Add card >
+Manual** and replace `ingresso` with your device's slug.
+
+`camera_view: live` starts the stream as soon as the card is visible and Home
+Assistant closes it when the view is left; a dashboard cannot stream while the
+dashboard is closed. The PTZ buttons send one pulse of the configured length,
+they do not keep moving while held.
+
 ## Options
 
 Open the integration entry and choose **Configure**:
