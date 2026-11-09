@@ -1,8 +1,8 @@
 # BombeCam camera widget for a Home Assistant dashboard.
 #
-# Compact card: live stream on top, then the camera controls next to a row of
-# small PTZ buttons. Add it with Dashboard -> Edit -> Add card -> Manual
-# (YAML).
+# Live stream at full width, with the small icon-only PTZ buttons and the
+# camera controls side by side underneath. Add it with Dashboard -> Edit ->
+# Add card -> Manual (YAML).
 #
 # Entity IDs follow the device name: the examples below assume a device named
 # "Ingresso", which gives camera.ingresso, button.ingresso_pan_left, and so on.
@@ -15,26 +15,25 @@
 #   cannot stream while the dashboard is closed.
 # - The PTZ buttons send one pulse of the configured length (Options -> PTZ
 #   pulse length, 400 ms by default). They do not keep moving while held.
-# - Change outer "columns: 2" to 1 to stack the controls under the buttons, or
-#   remove the outer grid card to keep the stream full width.
+# - Change the outer grid to columns: 1 to stack the controls under the buttons.
 
-type: grid
-columns: 2
-square: false
+type: vertical-stack
 cards:
-  - type: vertical-stack
-    cards:
-      - type: picture-entity
-        entity: camera.ingresso
-        camera_view: live
-        fit_mode: cover
-        show_name: false
-        show_state: false
-        tap_action:
-          action: more-info
+  - type: picture-entity
+    entity: camera.ingresso
+    camera_view: live
+    fit_mode: cover
+    show_name: false
+    show_state: false
+    tap_action:
+      action: more-info
 
+  - type: grid
+    columns: 2
+    square: false
+    cards:
       - type: grid
-        columns: 5
+        columns: 4
         square: true
         cards:
           - type: button
@@ -73,27 +72,16 @@ cards:
               target:
                 entity_id: button.ingresso_pan_right
 
-          - type: button
-            icon: mdi:stop
-            show_name: false
-            tap_action:
-              action: perform-action
-              perform_action: button.press
-              target:
-                entity_id: button.ingresso_stop
-
-  - type: entities
-    title: Camera
-    entities:
-      - entity: switch.ingresso_status_light
-        name: Status light
-      - entity: switch.ingresso_spotlight
-        name: Spotlight
-      - entity: switch.ingresso_motion_detection
-        name: Motion detection
-      - entity: switch.ingresso_sound_detection
-        name: Sound detection
-      - entity: select.ingresso_night_vision
-        name: Night vision
-      - entity: binary_sensor.ingresso_stream_online
-        name: Stream online
+      - type: entities
+        title: Camera
+        entities:
+          - entity: switch.ingresso_status_light
+            name: Status light
+          - entity: switch.ingresso_spotlight
+            name: Spotlight
+          - entity: switch.ingresso_motion_detection
+            name: Motion detection
+          - entity: switch.ingresso_sound_detection
+            name: Sound detection
+          - entity: select.ingresso_night_vision
+            name: Night vision

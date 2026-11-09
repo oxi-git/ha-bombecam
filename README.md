@@ -102,10 +102,10 @@ images are fetched from the gateway's `still_image_url`.
 ## Dashboard widget
 
 [`dashboard/webcam-card.yaml`](dashboard/webcam-card.yaml) is a ready-to-use
-compact card: the live stream on top, then the camera controls next to a row
-of small icon-only PTZ buttons (left, up, down, right, stop). Add it with
-**Dashboard > Edit > Add card > Manual** and replace `ingresso` with your
-device's slug.
+card: the live stream at full width, then the small icon-only PTZ buttons
+(left, up, down, right) and the camera controls side by side underneath. Add
+it with **Dashboard > Edit > Add card > Manual** and replace `ingresso` with
+your device's slug.
 
 `camera_view: live` starts the stream as soon as the card is visible and Home
 Assistant closes it when the view is left; a dashboard cannot stream while the
