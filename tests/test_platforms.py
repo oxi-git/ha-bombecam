@@ -136,13 +136,37 @@ async def test_switch_keeps_optimistic_state_on_stale_shadow(
     assert hass.states.get("switch.ingresso_status_light").state == "off"
 
 
-async def test_switch_drops_optimistic_state_after_grace(
-    hass, mock_client, bombecam_entry, monkeypatch
+async def test_switch_keeps_state_when_readback_fails(
+    hass, mock_client, bombecam_entry
 ):
-    """Without a confirmation the optimistic state expires after the grace."""
-    monkeypatch.setattr(
-        "custom_components.bombecam.switch.OPTIMISTIC_GRACE", 0
+    """An empty shadow does not blank a switch whose value is already known."""
+    mock_client["async_get_shadow"].return_value = {"LedOnOff": 1}
+    await _setup(hass, bombecam_entry)
+    coordinator = bombecam_entry.runtime_data
+    assert hass.states.get("switch.ingresso_status_light").state == "on"
+
+    # The gateway cannot read the camera back for a moment.
+    mock_client["async_get_shadow"].return_value = {}
+    await coordinator.async_refresh()
+    await hass.async_block_till_done()
+    assert hass.states.get("switch.ingresso_status_light").state == "on"
+
+    # And a command sent while the readback is failing still holds.
+    await hass.services.async_call(
+        "switch",
+        "turn_off",
+        {"entity_id": "switch.ingresso_status_light"},
+        blocking=True,
     )
+    await coordinator.async_refresh()
+    await hass.async_block_till_done()
+    assert hass.states.get("switch.ingresso_status_light").state == "off"
+
+
+async def test_switch_follows_external_change(
+    hass, mock_client, bombecam_entry
+):
+    """A value that changes after a command still comes from the camera."""
     mock_client["async_get_shadow"].return_value = {"LedOnOff": 0}
     await _setup(hass, bombecam_entry)
     coordinator = bombecam_entry.runtime_data
@@ -153,7 +177,19 @@ async def test_switch_drops_optimistic_state_after_grace(
         {"entity_id": "switch.ingresso_status_light"},
         blocking=True,
     )
+    # Stale readback: ignored.
+    await coordinator.async_refresh()
+    await hass.async_block_till_done()
+    assert hass.states.get("switch.ingresso_status_light").state == "on"
 
+    # The camera applies the command.
+    mock_client["async_get_shadow"].return_value = {"LedOnOff": 1}
+    await coordinator.async_refresh()
+    await hass.async_block_till_done()
+    assert hass.states.get("switch.ingresso_status_light").state == "on"
+
+    # The vendor app turns it off.
+    mock_client["async_get_shadow"].return_value = {"LedOnOff": 0}
     await coordinator.async_refresh()
     await hass.async_block_till_done()
     assert hass.states.get("switch.ingresso_status_light").state == "off"
@@ -189,6 +225,21 @@ async def test_night_vision_keeps_optimistic_option_on_stale_shadow(
     await coordinator.async_refresh()
     await hass.async_block_till_done()
     assert hass.states.get("select.ingresso_night_vision").state == "auto"
+
+
+async def test_night_vision_keeps_state_when_readback_fails(
+    hass, mock_client, bombecam_entry
+):
+    """An empty shadow does not blank the night vision select."""
+    mock_client["async_get_shadow"].return_value = {"IrLedMode": 0}
+    await _setup(hass, bombecam_entry)
+    coordinator = bombecam_entry.runtime_data
+    assert hass.states.get("select.ingresso_night_vision").state == "off"
+
+    mock_client["async_get_shadow"].return_value = {}
+    await coordinator.async_refresh()
+    await hass.async_block_till_done()
+    assert hass.states.get("select.ingresso_night_vision").state == "off"
 
 
 async def test_camera_stream_source(hass, mock_client, bombecam_entry):

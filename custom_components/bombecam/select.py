@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from time import monotonic
 from typing import Any
 
 from homeassistant.components.select import SelectEntity
@@ -16,7 +15,6 @@ from .const import (
     ATTR_NIGHT_VISION,
     NIGHT_VISION_AUTO,
     NIGHT_VISION_OFF,
-    OPTIMISTIC_GRACE,
 )
 from .coordinator import BombeCamCoordinator
 from .entity import BombeCamEntity
@@ -56,7 +54,7 @@ class BombeCamNightVisionSelect(BombeCamEntity, SelectEntity):
         super().__init__(coordinator, camera_uuid)
         self._attr_unique_id = f"{camera_uuid}_night_vision"
         self._optimistic: str | None = None
-        self._optimistic_at: float | None = None
+        self._last_reported: str | None = self._reported_option()
 
     def _reported_option(self) -> str | None:
         """Return the mode read back from the camera, or None when unknown."""
@@ -75,25 +73,31 @@ class BombeCamNightVisionSelect(BombeCamEntity, SelectEntity):
         """Return the optimistic mode, or the last value read from the camera."""
         if self._optimistic is not None:
             return self._optimistic
-        return self._reported_option()
+        reported = self._reported_option()
+        return reported if reported is not None else self._last_reported
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        """Expose the raw readback to make a wrong state diagnosable."""
+        return {
+            "readback": self._reported_option(),
+            "optimistic": self._optimistic is not None,
+        }
 
     async def async_select_option(self, option: str) -> None:
-        """Select a night vision mode, keeping it optimistic until refreshed."""
+        """Select a night vision mode, keeping it until the camera confirms."""
         if option not in NIGHT_VISION_OPTIONS:
             raise HomeAssistantError(
                 f"Unsupported night vision mode for {self._camera_uuid}: {option}"
             )
-        previous = self.current_option
         self._optimistic = option
-        self._optimistic_at = monotonic()
         self.async_write_ha_state()
         try:
             await self.coordinator.client.async_control(
                 self._camera_uuid, "ir", mode=option
             )
         except BombeCamError as err:
-            self._optimistic = previous
-            self._optimistic_at = None
+            self._optimistic = None
             self.async_write_ha_state()
             raise HomeAssistantError(
                 f"Cannot set night vision for {self._camera_uuid}: {err}"
@@ -102,15 +106,18 @@ class BombeCamNightVisionSelect(BombeCamEntity, SelectEntity):
 
     @callback
     def _handle_coordinator_update(self) -> None:
-        """Drop the optimistic mode once the camera confirms it or time runs out."""
-        if self._optimistic is not None:
-            expired = (
-                self._optimistic_at is None
-                or monotonic() - self._optimistic_at >= OPTIMISTIC_GRACE
-            )
-            if self._reported_option() == self._optimistic or expired:
-                self._optimistic = None
-                self._optimistic_at = None
+        """Reconcile the optimistic mode with the shadow readback."""
+        reported = self._reported_option()
+        if reported is not None:
+            if self._optimistic is not None:
+                if reported == self._optimistic:
+                    self._optimistic = None
+                elif (
+                    self._last_reported is not None
+                    and reported != self._last_reported
+                ):
+                    self._optimistic = None
+            self._last_reported = reported
         super()._handle_coordinator_update()
 
 

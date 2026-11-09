@@ -90,8 +90,11 @@ rather than guessed.
 
 A command is shown immediately and kept until the camera confirms it through
 the shadow, so a readback that is still one step behind does not flip the
-control back. If the camera never confirms, the optimistic state expires after
-45 seconds and the shadow value takes over again.
+control back. A value that changes again afterwards comes from the camera (or
+from the vendor app) and wins. While the gateway cannot read the camera back,
+the last known state is kept instead of showing unknown. Each switch and the
+night-vision select expose `readback` and `optimistic` attributes, which makes
+a wrong state easy to diagnose from Developer tools > States.
 
 The camera entity exposes the gateway's RTSP URL as its stream source. Still
 images are fetched from the gateway's `still_image_url`.
@@ -99,14 +102,16 @@ images are fetched from the gateway's `still_image_url`.
 ## Dashboard widget
 
 [`dashboard/webcam-card.yaml`](dashboard/webcam-card.yaml) is a ready-to-use
-card with the live stream, the PTZ D-pad (left, right, up, down, stop) and the
-camera controls in one card. Add it with **Dashboard > Edit > Add card >
-Manual** and replace `ingresso` with your device's slug.
+compact card: the live stream on top, then the camera controls next to a row
+of small icon-only PTZ buttons (left, up, down, right, stop). Add it with
+**Dashboard > Edit > Add card > Manual** and replace `ingresso` with your
+device's slug.
 
 `camera_view: live` starts the stream as soon as the card is visible and Home
 Assistant closes it when the view is left; a dashboard cannot stream while the
 dashboard is closed. The PTZ buttons send one pulse of the configured length,
-they do not keep moving while held.
+they do not keep moving while held. Set the outer `columns` to `1` to stack the
+controls, or drop the outer grid card to keep the stream full width.
 
 ## Options
 

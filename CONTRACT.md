@@ -49,7 +49,7 @@ With `has_entity_name`, the entity_id comes from the device name and the entity 
 ## Behaviour rules
 
 - Buttons: pulse `CONF_PTZ_DURATION` from `entry.options` (default 400 ms); `stop` sends `0`. Raise `HomeAssistantError` with the gateway message when the call fails.
-- Switches/select: optimistic state kept until the shadow reports the commanded value or `OPTIMISTIC_GRACE` (45 s) expires, reverted on failure; then `await coordinator.async_request_refresh()`. A stale readback that still has the old value must not clear it. Unknown readback → state `None` (shown as unknown), not a guess.
+- Switches/select: optimistic state kept until the shadow reports the commanded value; a *changed* readback from another client also wins, a stale one is ignored. Reverted on failure; then `await coordinator.async_request_refresh()`. While the readback is missing keep the last known value. Unknown at startup → state `None` (shown as unknown), not a guess. Expose `readback` and `optimistic` as attributes.
 - Camera: `stream_source()` returns `rtsp_url`; `async_camera_image()` fetches `still_image_url` through `async_get_clientsession(hass)`; re-fetch the still every poll is unnecessary, cache briefly is optional.
 - Never call the gateway from the event loop without the client (it already enforces timeouts and error types).
 - Code, comments and docstrings in English. `from __future__ import annotations` at the top. No new dependencies.
