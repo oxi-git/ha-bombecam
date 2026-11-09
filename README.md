@@ -88,6 +88,11 @@ The night-vision select offers `auto` and `off`. Switch and select states come
 from the camera shadow; a value the camera did not report is shown as unknown
 rather than guessed.
 
+A command is shown immediately and kept until the camera confirms it through
+the shadow, so a readback that is still one step behind does not flip the
+control back. If the camera never confirms, the optimistic state expires after
+45 seconds and the shadow value takes over again.
+
 The camera entity exposes the gateway's RTSP URL as its stream source. Still
 images are fetched from the gateway's `still_image_url`.
 

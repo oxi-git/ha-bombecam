@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from time import monotonic
 from typing import Any
 
 from homeassistant.components.switch import SwitchEntity
@@ -18,6 +19,7 @@ from .const import (
     ATTR_SOUND,
     ATTR_SPOTLIGHT,
     ATTR_STATUS_LIGHT,
+    OPTIMISTIC_GRACE,
 )
 from .coordinator import BombeCamCoordinator
 from .entity import BombeCamEntity
@@ -100,6 +102,7 @@ class BombeCamSwitch(BombeCamEntity, SwitchEntity):
         self._attr_unique_id = f"{camera_uuid}_{description.key}"
         self._attr_icon = description.icon
         self._optimistic: bool | None = None
+        self._optimistic_at: float | None = None
 
     @property
     def is_on(self) -> bool | None:
@@ -123,6 +126,7 @@ class BombeCamSwitch(BombeCamEntity, SwitchEntity):
         """Send one control action, keeping the state optimistic until refreshed."""
         previous = self.is_on
         self._optimistic = state
+        self._optimistic_at = monotonic()
         self.async_write_ha_state()
         try:
             await self.coordinator.client.async_control(
@@ -132,6 +136,7 @@ class BombeCamSwitch(BombeCamEntity, SwitchEntity):
             )
         except BombeCamError as err:
             self._optimistic = previous
+            self._optimistic_at = None
             self.async_write_ha_state()
             raise HomeAssistantError(
                 f"Cannot set {self.entity_description.name} for "
@@ -141,8 +146,26 @@ class BombeCamSwitch(BombeCamEntity, SwitchEntity):
 
     @callback
     def _handle_coordinator_update(self) -> None:
-        """Let the value read back from the camera win over the optimistic one."""
-        self._optimistic = None
+        """Drop the optimistic state once the camera confirms it or time runs out.
+
+        The shadow can still hold the previous value right after a command
+        (the camera answers before it applied the change), so a single stale
+        poll must not flip the switch back.
+        """
+        if self._optimistic is not None:
+            camera = self.camera
+            reported = (
+                _as_bool(camera.value(self.entity_description.attribute))
+                if camera is not None
+                else None
+            )
+            expired = (
+                self._optimistic_at is None
+                or monotonic() - self._optimistic_at >= OPTIMISTIC_GRACE
+            )
+            if reported is self._optimistic or expired:
+                self._optimistic = None
+                self._optimistic_at = None
         super()._handle_coordinator_update()
 
 

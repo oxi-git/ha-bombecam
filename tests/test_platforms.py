@@ -102,6 +102,95 @@ async def test_switch_state_follows_shadow(hass, mock_client, entry_factory):
     assert state.state == "on"
 
 
+async def test_switch_keeps_optimistic_state_on_stale_shadow(
+    hass, mock_client, bombecam_entry
+):
+    """A stale readback must not flip the switch back to its old value."""
+    mock_client["async_get_shadow"].return_value = {"LedOnOff": 0}
+    await _setup(hass, bombecam_entry)
+    coordinator = bombecam_entry.runtime_data
+
+    await hass.services.async_call(
+        "switch",
+        "turn_on",
+        {"entity_id": "switch.ingresso_status_light"},
+        blocking=True,
+    )
+    assert hass.states.get("switch.ingresso_status_light").state == "on"
+
+    # The camera still answers with the old value for a moment.
+    await coordinator.async_refresh()
+    await hass.async_block_till_done()
+    assert hass.states.get("switch.ingresso_status_light").state == "on"
+
+    # Once the camera confirms, the optimistic state is dropped and the
+    # readback takes over again.
+    mock_client["async_get_shadow"].return_value = {"LedOnOff": 1}
+    await coordinator.async_refresh()
+    await hass.async_block_till_done()
+    assert hass.states.get("switch.ingresso_status_light").state == "on"
+
+    mock_client["async_get_shadow"].return_value = {"LedOnOff": 0}
+    await coordinator.async_refresh()
+    await hass.async_block_till_done()
+    assert hass.states.get("switch.ingresso_status_light").state == "off"
+
+
+async def test_switch_drops_optimistic_state_after_grace(
+    hass, mock_client, bombecam_entry, monkeypatch
+):
+    """Without a confirmation the optimistic state expires after the grace."""
+    monkeypatch.setattr(
+        "custom_components.bombecam.switch.OPTIMISTIC_GRACE", 0
+    )
+    mock_client["async_get_shadow"].return_value = {"LedOnOff": 0}
+    await _setup(hass, bombecam_entry)
+    coordinator = bombecam_entry.runtime_data
+
+    await hass.services.async_call(
+        "switch",
+        "turn_on",
+        {"entity_id": "switch.ingresso_status_light"},
+        blocking=True,
+    )
+
+    await coordinator.async_refresh()
+    await hass.async_block_till_done()
+    assert hass.states.get("switch.ingresso_status_light").state == "off"
+
+
+async def test_night_vision_keeps_optimistic_option_on_stale_shadow(
+    hass, mock_client, bombecam_entry
+):
+    """The night vision select ignores a stale readback until it is confirmed."""
+    mock_client["async_get_shadow"].return_value = {"IrLedMode": 1}
+    await _setup(hass, bombecam_entry)
+    coordinator = bombecam_entry.runtime_data
+
+    await hass.services.async_call(
+        "select",
+        "select_option",
+        {"entity_id": "select.ingresso_night_vision", "option": "off"},
+        blocking=True,
+    )
+    assert hass.states.get("select.ingresso_night_vision").state == "off"
+
+    # Still reporting "auto" from before the command.
+    await coordinator.async_refresh()
+    await hass.async_block_till_done()
+    assert hass.states.get("select.ingresso_night_vision").state == "off"
+
+    mock_client["async_get_shadow"].return_value = {"IrLedMode": 0}
+    await coordinator.async_refresh()
+    await hass.async_block_till_done()
+    assert hass.states.get("select.ingresso_night_vision").state == "off"
+
+    mock_client["async_get_shadow"].return_value = {"IrLedMode": 1}
+    await coordinator.async_refresh()
+    await hass.async_block_till_done()
+    assert hass.states.get("select.ingresso_night_vision").state == "auto"
+
+
 async def test_camera_stream_source(hass, mock_client, bombecam_entry):
     """The camera stream source is the RTSP URL reported by the gateway."""
     await _setup(hass, bombecam_entry)

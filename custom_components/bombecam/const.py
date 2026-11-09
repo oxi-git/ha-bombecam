@@ -21,6 +21,11 @@ MAX_SCAN_INTERVAL: Final = 600
 
 REQUEST_TIMEOUT: Final = 10
 
+# How long an optimistic switch/select state may outlive the last command while
+# waiting for the camera to confirm it through the shadow. A stale readback
+# (the camera answers before it applied the change) must not flip the UI back.
+OPTIMISTIC_GRACE: Final = 45
+
 MANUFACTURER: Final = "BombeCam"
 
 PLATFORMS: Final = [
