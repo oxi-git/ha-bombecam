@@ -23,6 +23,7 @@ BASE_URL = "http://192.0.2.10:8654"
 TOKEN = "test-token"
 RTSP_URL = "rtsp://192.0.2.10:8554/ingresso"
 STILL_IMAGE_URL = f"{BASE_URL}/api/v1/cameras/cam1/snapshot.jpg"
+LATEST_RECORDING_URL = f"{BASE_URL}/api/v1/recordings/download?path=cam1%2F2026-11-13_10-00-00.mp4"
 
 
 @pytest.fixture(autouse=True)
@@ -47,6 +48,8 @@ def gateway_data() -> GatewayData:
                 rtsp_url=RTSP_URL,
                 still_image_url=STILL_IMAGE_URL,
                 stream_name="ingresso",
+                recording_available=True,
+                latest_recording_url=LATEST_RECORDING_URL,
             )
         },
     )

@@ -11,6 +11,7 @@ EXPECTED_ENTITIES = [
     "switch.ingresso_status_light",
     "select.ingresso_night_vision",
     "binary_sensor.ingresso_stream_online",
+    "binary_sensor.ingresso_recording",
     "camera.ingresso",
 ]
 

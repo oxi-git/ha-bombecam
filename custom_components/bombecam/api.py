@@ -62,6 +62,8 @@ class CameraInfo:
     rtsp_url: str = ""
     still_image_url: str | None = None
     stream_name: str = ""
+    recording_available: bool = False
+    latest_recording_url: str | None = None
 
 
 @dataclass(slots=True)
@@ -166,6 +168,8 @@ class BombeCamClient:
                 rtsp_url=(raw.get("rtsp_url") or "").strip(),
                 still_image_url=(raw.get("still_image_url") or None),
                 stream_name=(raw.get("stream_name") or "").strip(),
+                recording_available=bool(raw.get("recording_available")),
+                latest_recording_url=(raw.get("latest_recording_url") or None),
             )
         return GatewayData(gateway=gateway, cameras=cameras)
 
