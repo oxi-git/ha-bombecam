@@ -9,14 +9,25 @@ from custom_components.bombecam.api import (
     BombeCamAuthError,
     BombeCamConnectionError,
 )
-from custom_components.bombecam.const import CONF_TOKEN, CONF_URL, DOMAIN
+from custom_components.bombecam.const import (
+    CONF_CODE,
+    CONF_PASSWORD,
+    CONF_TOKEN,
+    CONF_URL,
+    CONF_USERNAME,
+    DOMAIN,
+)
 
-USER_INPUT = {CONF_URL: "192.0.2.10:8654", CONF_TOKEN: "test-token"}
+USER_INPUT = {
+    CONF_URL: "192.0.2.10:8654",
+    CONF_USERNAME: "admin",
+    CONF_PASSWORD: "hunter2hunter2",
+}
 NORMALIZED_URL = "http://192.0.2.10:8654"
 
 
 async def test_user_flow_creates_entry(hass, mock_client):
-    """A reachable gateway with a valid token creates one entry."""
+    """A reachable gateway with valid credentials creates one entry."""
     result = await hass.config_entries.flow.async_init(
         DOMAIN, context={"source": config_entries.SOURCE_USER}
     )
@@ -35,12 +46,32 @@ async def test_user_flow_creates_entry(hass, mock_client):
         CONF_TOKEN: "test-token",
     }
     assert result["result"].unique_id == NORMALIZED_URL
+    mock_client["async_generate_token"].assert_awaited_once()
     mock_client["async_validate"].assert_awaited_once()
 
 
-async def test_user_flow_rejects_bad_token(hass, mock_client):
+async def test_user_flow_sends_two_step_code(hass, mock_client):
+    """The optional two-step code is forwarded to the token endpoint."""
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN, context={"source": config_entries.SOURCE_USER}
+    )
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {**USER_INPUT, CONF_CODE: "123456"}
+    )
+    await hass.async_block_till_done()
+
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    mock_client["async_generate_token"].assert_awaited_once()
+    assert (
+        mock_client["async_generate_token"].call_args.args[4] == "123456"
+    )
+
+
+async def test_user_flow_rejects_bad_credentials(hass, mock_client):
     """A 401/403 from the gateway keeps the form and reports invalid_auth."""
-    mock_client["async_validate"].side_effect = BombeCamAuthError("token rejected")
+    mock_client["async_generate_token"].side_effect = BombeCamAuthError(
+        "credentials rejected"
+    )
 
     result = await hass.config_entries.flow.async_init(
         DOMAIN, context={"source": config_entries.SOURCE_USER}
@@ -56,7 +87,9 @@ async def test_user_flow_rejects_bad_token(hass, mock_client):
 
 async def test_user_flow_reports_unreachable_host(hass, mock_client):
     """A network failure keeps the form and reports cannot_connect."""
-    mock_client["async_validate"].side_effect = BombeCamConnectionError("timeout")
+    mock_client["async_generate_token"].side_effect = BombeCamConnectionError(
+        "timeout"
+    )
 
     result = await hass.config_entries.flow.async_init(
         DOMAIN, context={"source": config_entries.SOURCE_USER}
@@ -69,14 +102,18 @@ async def test_user_flow_reports_unreachable_host(hass, mock_client):
     assert result["errors"] == {"base": "cannot_connect"}
 
 
-async def test_user_flow_strips_bearer_prefix(hass, mock_client):
-    """A pasted 'Bearer ' prefix and surrounding spaces are removed."""
+async def test_user_flow_trims_address(hass, mock_client):
+    """Surrounding spaces and a missing scheme are normalized."""
     result = await hass.config_entries.flow.async_init(
         DOMAIN, context={"source": config_entries.SOURCE_USER}
     )
     result = await hass.config_entries.flow.async_configure(
         result["flow_id"],
-        {CONF_URL: " 192.0.2.10:8654 ", CONF_TOKEN: " Bearer test-token "},
+        {
+            CONF_URL: " 192.0.2.10:8654 ",
+            CONF_USERNAME: "admin",
+            CONF_PASSWORD: "hunter2hunter2",
+        },
     )
     await hass.async_block_till_done()
 

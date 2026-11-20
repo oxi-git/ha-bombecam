@@ -42,6 +42,41 @@ def normalize_token(value: str) -> str:
     return token
 
 
+async def async_generate_token(
+    session: ClientSession,
+    base_url: str,
+    name: str,
+    password: str,
+    code: str = "",
+    timeout: int = REQUEST_TIMEOUT,
+) -> str:
+    """Exchange administrator credentials for a bearer token."""
+    url = f"{normalize_url(base_url)}/api/v1/operator/token"
+    payload: dict[str, Any] = {"name": name, "password": password}
+    if code:
+        payload["code"] = code
+    timeout_cfg = ClientTimeout(total=timeout)
+    try:
+        async with session.post(url, json=payload, timeout=timeout_cfg) as response:
+            body = await response.text()
+            if response.status in (401, 403):
+                raise BombeCamAuthError(body[:200] or "credentials rejected")
+            if response.status >= 400:
+                raise BombeCamApiError(f"HTTP {response.status}: {body[:200]}")
+            try:
+                data = await response.json(content_type=None)
+            except ValueError as err:
+                raise BombeCamApiError(f"invalid JSON from operator token: {err}") from err
+    except ClientError as err:
+        raise BombeCamConnectionError(str(err)) from err
+    except TimeoutError as err:
+        raise BombeCamConnectionError("timeout") from err
+    token = normalize_token(str(data.get("token") or ""))
+    if not token:
+        raise BombeCamApiError("gateway did not return an API token")
+    return token
+
+
 @dataclass(slots=True)
 class GatewayInfo:
     """Addresses the gateway reports for its own streams."""
@@ -100,6 +135,11 @@ class BombeCamClient:
         self.base_url = normalize_url(base_url)
         self._token = normalize_token(token)
         self._timeout = ClientTimeout(total=timeout)
+
+    @property
+    def token(self) -> str:
+        """Return the normalized Bearer token the client holds."""
+        return self._token
 
     @property
     def _headers(self) -> dict[str, str]:

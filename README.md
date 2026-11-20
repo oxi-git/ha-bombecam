@@ -11,7 +11,10 @@ The API contract this integration implements is documented in
 ## Requirements
 
 - A BombeCam gateway reachable from Home Assistant over the LAN.
-- An API token minted by the gateway (see below).
+- The gateway's administrator name and password (the credentials used when the
+  gateway is set up, or the ones shown in its Settings page). The integration
+  mints its own API token from these; there is no manual `curl` step to run
+  first.
 - The gateway HTTP server bound to a LAN address. Start the gateway with
   `OSAIO_HTTP=0.0.0.0:8654`; otherwise it may only listen on loopback and Home
   Assistant cannot reach it.
@@ -46,23 +49,18 @@ Home Assistant.
 
 ## Configuration
 
-The config flow asks for the gateway address and an API token. The address may
-be entered with or without a scheme; it is normalized to `http://host:port` and
-used as the config entry unique ID, so the same gateway cannot be added twice.
+The config flow asks for the gateway address and the administrator name and
+password it should sign in with. That is all: the integration exchanges those
+credentials for an API token itself and stores the token in the config entry,
+so there is no `curl` step to run first.
 
-Generate a token on the machine running BombeCam:
+The address may be entered with or without a scheme; it is normalized to
+`http://host:port` and used as the config entry unique ID, so the same gateway
+cannot be added twice. If the gateway is configured for two-step verification
+on the administrator account, fill in the code field too.
 
-```sh
-curl -u admin:YOUR_PASSWORD -X POST http://192.0.2.10:8654/api/v1/operator/token
-```
-
-Copy the token from the response into the integration form. The token is stored
-in the Home Assistant config entry and sent as a Bearer token on every request;
-paste it as returned (`bc_tok_...`). A pasted `Bearer ` prefix and surrounding
-spaces are removed automatically.
-
-If the gateway later rejects the token, Home Assistant starts a re-auth flow and
-asks for a new one; the address is kept.
+If the gateway later rejects the token, Home Assistant starts a re-auth flow
+and asks for the name and password again; the address is kept.
 
 ## Entities
 
@@ -143,7 +141,7 @@ Changing the options reloads the config entry.
 
 | Symptom | Likely cause |
 |---|---|
-| `401` or `403`, config flow reports `invalid_auth` | Token missing, expired or wrong. Mint a new token and use the re-auth flow. |
+| `401` or `403`, config flow reports `invalid_auth` | Wrong administrator name or password. Re-enter them and use the re-auth flow. |
 | `404` | The address points to another service, or the gateway firmware lacks the `/api/v1/integrations/homeassistant` endpoint. |
 | `503` | The gateway cannot reach the camera control channel. Streams may still work; controls stay unavailable until the camera reconnects. |
 | Timeouts and `cannot_connect` | Wrong address or port, gateway bound to loopback only (start it with `OSAIO_HTTP=0.0.0.0:8654`), or a firewall between Home Assistant and the gateway. |

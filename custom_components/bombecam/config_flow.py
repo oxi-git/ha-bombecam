@@ -13,7 +13,6 @@ from homeassistant.config_entries import (
     ConfigFlowResult,
     OptionsFlow,
 )
-from homeassistant.const import CONF_URL
 from homeassistant.core import callback
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.selector import (
@@ -30,12 +29,16 @@ from .api import (
     BombeCamClient,
     BombeCamConnectionError,
     BombeCamError,
-    normalize_token,
+    async_generate_token,
 )
 from .const import (
+    CONF_CODE,
+    CONF_PASSWORD,
     CONF_PTZ_DURATION,
     CONF_SCAN_INTERVAL,
     CONF_TOKEN,
+    CONF_URL,
+    CONF_USERNAME,
     DEFAULT_PTZ_DURATION,
     DEFAULT_SCAN_INTERVAL,
     DOMAIN,
@@ -50,15 +53,24 @@ def _title(url: str) -> str:
 
 
 class BombeCamConfigFlow(ConfigFlow, domain=DOMAIN):
-    """Ask for the gateway address and an API token."""
+    """Connect to the gateway with administrator credentials."""
 
     VERSION = 1
 
     async def _async_validate(
-        self, url: str, token: str
+        self, url: str, name: str, password: str, code: str = ""
     ) -> tuple[BombeCamClient | None, str | None]:
-        """Check that the address answers and the token is accepted."""
-        client = BombeCamClient(async_get_clientsession(self.hass), url, token)
+        """Mint a token from the credentials and check the gateway accepts it."""
+        session = async_get_clientsession(self.hass)
+        try:
+            token = await async_generate_token(session, url, name, password, code)
+        except BombeCamAuthError:
+            return None, "invalid_auth"
+        except BombeCamConnectionError:
+            return None, "cannot_connect"
+        except BombeCamError:
+            return None, "unknown"
+        client = BombeCamClient(session, url, token)
         try:
             await client.async_validate()
         except BombeCamAuthError:
@@ -75,8 +87,12 @@ class BombeCamConfigFlow(ConfigFlow, domain=DOMAIN):
         """Handle the first step."""
         errors: dict[str, str] = {}
         if user_input is not None:
-            token = normalize_token(user_input[CONF_TOKEN])
-            client, error = await self._async_validate(user_input[CONF_URL], token)
+            client, error = await self._async_validate(
+                user_input[CONF_URL],
+                user_input[CONF_USERNAME],
+                user_input[CONF_PASSWORD],
+                user_input.get(CONF_CODE, ""),
+            )
             if client is not None:
                 await self.async_set_unique_id(client.base_url)
                 self._abort_if_unique_id_configured()
@@ -84,7 +100,7 @@ class BombeCamConfigFlow(ConfigFlow, domain=DOMAIN):
                     title=_title(client.base_url),
                     data={
                         CONF_URL: client.base_url,
-                        CONF_TOKEN: token,
+                        CONF_TOKEN: client.token,
                     },
                 )
             if error is not None:
@@ -97,8 +113,14 @@ class BombeCamConfigFlow(ConfigFlow, domain=DOMAIN):
                     vol.Required(CONF_URL): TextSelector(
                         TextSelectorConfig(type=TextSelectorType.URL)
                     ),
-                    vol.Required(CONF_TOKEN): TextSelector(
+                    vol.Required(CONF_USERNAME, default="admin"): TextSelector(
+                        TextSelectorConfig(type=TextSelectorType.TEXT)
+                    ),
+                    vol.Required(CONF_PASSWORD): TextSelector(
                         TextSelectorConfig(type=TextSelectorType.PASSWORD)
+                    ),
+                    vol.Optional(CONF_CODE): TextSelector(
+                        TextSelectorConfig(type=TextSelectorType.TEXT)
                     ),
                 }
             ),
@@ -114,19 +136,23 @@ class BombeCamConfigFlow(ConfigFlow, domain=DOMAIN):
     async def async_step_reauth_confirm(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
-        """Ask for a fresh token and keep the same address."""
+        """Mint a fresh token from the credentials and keep the same address."""
         errors: dict[str, str] = {}
         entry = self.hass.config_entries.async_get_entry(self.context["entry_id"])
         if entry is None:
             return self.async_abort(reason="reauth_entry_missing")
 
         if user_input is not None:
-            token = normalize_token(user_input[CONF_TOKEN])
-            client, error = await self._async_validate(entry.data[CONF_URL], token)
+            client, error = await self._async_validate(
+                entry.data[CONF_URL],
+                user_input[CONF_USERNAME],
+                user_input[CONF_PASSWORD],
+                user_input.get(CONF_CODE, ""),
+            )
             if client is not None:
                 return self.async_update_reload_and_abort(
                     entry,
-                    data={**entry.data, CONF_TOKEN: token},
+                    data={**entry.data, CONF_TOKEN: client.token},
                 )
             if error is not None:
                 errors["base"] = error
@@ -135,9 +161,15 @@ class BombeCamConfigFlow(ConfigFlow, domain=DOMAIN):
             step_id="reauth_confirm",
             data_schema=vol.Schema(
                 {
-                    vol.Required(CONF_TOKEN): TextSelector(
+                    vol.Required(CONF_USERNAME, default="admin"): TextSelector(
+                        TextSelectorConfig(type=TextSelectorType.TEXT)
+                    ),
+                    vol.Required(CONF_PASSWORD): TextSelector(
                         TextSelectorConfig(type=TextSelectorType.PASSWORD)
-                    )
+                    ),
+                    vol.Optional(CONF_CODE): TextSelector(
+                        TextSelectorConfig(type=TextSelectorType.TEXT)
+                    ),
                 }
             ),
             description_placeholders={"url": entry.data[CONF_URL]},

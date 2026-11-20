@@ -11,6 +11,9 @@ DOMAIN: Final = "bombecam"
 
 CONF_URL: Final = "url"
 CONF_TOKEN: Final = "token"
+CONF_USERNAME: Final = "username"
+CONF_PASSWORD: Final = "password"
+CONF_CODE: Final = "code"
 CONF_SCAN_INTERVAL: Final = "scan_interval"
 CONF_PTZ_DURATION: Final = "ptz_duration"
 

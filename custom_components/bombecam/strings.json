@@ -3,23 +3,27 @@
     "step": {
       "user": {
         "title": "Connect to BombeCam",
-        "description": "Enter the address of the BombeCam gateway (for example http://192.0.2.10:8654) and an API token minted on the BombeCam computer.",
+        "description": "Enter the address of the BombeCam gateway (for example http://192.0.2.10:8654) and the administrator credentials. No manual token: the gateway mints one for you.",
         "data": {
           "url": "Address",
-          "token": "API token"
+          "username": "Administrator name",
+          "password": "Administrator password",
+          "code": "Two-step code"
         }
       },
       "reauth_confirm": {
-        "title": "BombeCam token rejected",
-        "description": "The gateway at {url} rejected the stored token. Paste a new one.",
+        "title": "BombeCam sign-in required",
+        "description": "The gateway at {url} rejected the stored sign-in. Enter the administrator name and password.",
         "data": {
-          "token": "API token"
+          "username": "Administrator name",
+          "password": "Administrator password",
+          "code": "Two-step code"
         }
       }
     },
     "error": {
-      "invalid_auth": "The gateway rejected this token.",
-      "cannot_connect": "Cannot reach the gateway at that address.",
+      "invalid_auth": "The gateway rejected these credentials.",
+      "cannot_connect": "Cannot reach the gateway; check the address.",
       "unknown": "Unexpected error; see the Home Assistant log."
     },
     "abort": {
@@ -33,9 +37,22 @@
         "title": "BombeCam options",
         "data": {
           "scan_interval": "Polling interval",
-          "ptz_duration": "PTZ pulse length"
+          "ptz_duration": "PTZ pulse duration"
         }
       }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "recordings": {
+        "name": "Recordings"
+      }
+    }
+  },
+  "issues": {
+    "shadow_readback_failed": {
+      "title": "Camera controls will not respond",
+      "description": "Camera settings are not reporting back. The camera stream may still work, but switch and select states will stay unknown. Check the BombeCam logs."
     }
   }
 }

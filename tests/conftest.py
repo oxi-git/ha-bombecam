@@ -68,12 +68,21 @@ def mock_client(gateway_data: GatewayData) -> Iterator[dict[str, AsyncMock]]:
         "async_get_shadow": AsyncMock(return_value={}),
         "async_ptz": AsyncMock(return_value={}),
         "async_control": AsyncMock(return_value={}),
+        "async_generate_token": AsyncMock(return_value=TOKEN),
     }
     with ExitStack() as stack:
         for name, mock in mocks.items():
-            stack.enter_context(
-                patch.object(BombeCamClient, name, mock)
-            )
+            if name == "async_generate_token":
+                stack.enter_context(
+                    patch(
+                        "custom_components.bombecam.config_flow.async_generate_token",
+                        mock,
+                    )
+                )
+            else:
+                stack.enter_context(
+                    patch.object(BombeCamClient, name, mock)
+                )
         yield mocks
 
 

@@ -2,25 +2,29 @@
   "config": {
     "step": {
       "user": {
-        "title": "Connetti BombeCam",
-        "description": "Inserisci l'indirizzo del gateway BombeCam (per esempio http://192.0.2.10:8654) e un token API creato sul computer BombeCam.",
+        "title": "Collega BombeCam",
+        "description": "Inserisci l'indirizzo del gateway BombeCam (per esempio http://192.0.2.10:8654) e le credenziali amministratore. Nessun token manuale: il gateway lo genera per te.",
         "data": {
           "url": "Indirizzo",
-          "token": "Token API"
+          "username": "Nome amministratore",
+          "password": "Password amministratore",
+          "code": "Codice a due fattori"
         }
       },
       "reauth_confirm": {
-        "title": "Token BombeCam rifiutato",
-        "description": "Il gateway su {url} ha rifiutato il token salvato. Incollane uno nuovo.",
+        "title": "Accesso BombeCam richiesto",
+        "description": "Il gateway su {url} ha rifiutato l'accesso salvato. Inserisci nome e password amministratore.",
         "data": {
-          "token": "Token API"
+          "username": "Nome amministratore",
+          "password": "Password amministratore",
+          "code": "Codice a due fattori"
         }
       }
     },
     "error": {
-      "invalid_auth": "Il gateway ha rifiutato questo token.",
-      "cannot_connect": "Impossibile raggiungere il gateway a questo indirizzo.",
-      "unknown": "Errore inatteso; controlla il log di Home Assistant."
+      "invalid_auth": "Il gateway ha rifiutato queste credenziali.",
+      "cannot_connect": "Impossibile raggiungere il gateway; controlla l'indirizzo.",
+      "unknown": "Errore imprevisto; vedi il log di Home Assistant."
     },
     "abort": {
       "already_configured": "Questo gateway è già configurato.",
@@ -32,10 +36,23 @@
       "init": {
         "title": "Opzioni BombeCam",
         "data": {
-          "scan_interval": "Intervallo di aggiornamento",
+          "scan_interval": "Intervallo di interrogazione",
           "ptz_duration": "Durata impulso PTZ"
         }
       }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "recordings": {
+        "name": "Registrazioni"
+      }
+    }
+  },
+  "issues": {
+    "shadow_readback_failed": {
+      "title": "I controlli della videocamera non risponderanno",
+      "description": "Le impostazioni della videocamera non tornano indietro. Lo stream può continuare a funzionare, ma gli stati di interruttori e selettori resteranno sconosciuti. Controlla i log di BombeCam."
     }
   }
 }
